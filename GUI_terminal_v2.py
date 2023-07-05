@@ -19,8 +19,11 @@ class SerialPortReader(QThread):
 
         while True:
             data = self.serial_port.readline().strip().decode()
-            decoded_data = data[7:21] + data[29:]
-            self.new_data_received.emit(decoded_data)
+            if "HUB" in data:
+                decoded_data = data[7:21] + data[29:]
+                self.new_data_received.emit(decoded_data)
+            else:
+                self.new_data_received.emit(data.replace("\r", ""))
 
 
 class TerminalWindow(QMainWindow):
@@ -80,8 +83,7 @@ class TerminalWindow(QMainWindow):
     def send_command(self):
 
         command = self.input.text()
-        prep_command = command + "\r\n"
-        self.serial_port_reader.serial_port.write(prep_command.encode())
+        self.serial_port_reader.serial_port.write(command.encode() + b"\r\n")
         self.terminal_output.append(f"> {command}")
         self.input.clear()
 
