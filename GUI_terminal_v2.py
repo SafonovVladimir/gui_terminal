@@ -73,7 +73,6 @@ class TerminalWindow(QMainWindow):
             self.serial_port_reader = SerialPortReader(port, baud_rate)
             self.serial_port_reader.new_data_received.connect(self.update_logs)
             self.serial_port_reader.start()
-
         except serial.SerialException as e:
             self.terminal_output.append(f"Error: {str(e)}")
 
@@ -81,7 +80,6 @@ class TerminalWindow(QMainWindow):
         self.terminal_output.append(data)
 
     def send_command(self):
-
         command = self.input.text()
         self.serial_port_reader.serial_port.write(command.encode() + b"\r\n")
         self.terminal_output.append(f"> {command}")
