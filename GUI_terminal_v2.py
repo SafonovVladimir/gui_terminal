@@ -1,7 +1,7 @@
 import sys
 import serial
 from PyQt5.QtCore import QThread, pyqtSignal
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel, QLineEdit, QPushButton, QTextEdit, \
+from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel, QLineEdit, QPushButton, \
     QTextBrowser
 
 
@@ -19,7 +19,7 @@ class SerialPortReader(QThread):
 
         while True:
             data = self.serial_port.readline().strip().decode()
-            decoded_data = data[7:21] + data[34:]
+            decoded_data = data[7:21] + data[29:]
             self.new_data_received.emit(decoded_data)
 
 
@@ -27,8 +27,10 @@ class TerminalWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.serial_port = None
+
         self.setWindowTitle("Minicom")
-        self.resize(800, 600)
+        self.resize(1600, 1200)
 
         # Create a central widget
         central_widget = QWidget(self)
@@ -38,12 +40,14 @@ class TerminalWindow(QMainWindow):
         layout = QVBoxLayout(central_widget)
 
         # Create labels, line edits, and button for port and baud rate
+        self.input = QLineEdit(self)
         port_label = QLabel("Port:")
         self.port_line_edit = QLineEdit()
         baud_rate_label = QLabel("Baud Rate:")
         self.baud_rate_line_edit = QLineEdit()
         connect_button = QPushButton("Connect")
         connect_button.clicked.connect(self.connect_button_clicked)
+        self.input.returnPressed.connect(self.send_command)
 
         # Create a text edit widget for displaying terminal output
         self.terminal_output = QTextBrowser(self)
@@ -55,6 +59,7 @@ class TerminalWindow(QMainWindow):
         layout.addWidget(self.baud_rate_line_edit)
         layout.addWidget(connect_button)
         layout.addWidget(self.terminal_output)
+        layout.addWidget(self.input)
 
     def connect_button_clicked(self):
         port = self.port_line_edit.text()
@@ -71,6 +76,14 @@ class TerminalWindow(QMainWindow):
 
     def update_logs(self, data):
         self.terminal_output.append(data)
+
+    def send_command(self):
+
+        command = self.input.text()
+        prep_command = command + "\r\n"
+        self.serial_port_reader.serial_port.write(prep_command.encode())
+        self.terminal_output.append(f"> {command}")
+        self.input.clear()
 
 
 if __name__ == '__main__':
