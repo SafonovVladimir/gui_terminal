@@ -1,36 +1,12 @@
-import sys
 import serial
-from PyQt5.QtCore import QThread, pyqtSignal
-from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel, QLineEdit, QPushButton, \
-    QTextBrowser
+from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QLineEdit, QLabel, QPushButton, QTextBrowser
+
+from Utility.serialPortReader import SerialPortReader
 
 
-class SerialPortReader(QThread):
-    new_data_received = pyqtSignal(str)
-
-    def __init__(self, port, baudrate):
-        super().__init__()
-        self.port = port
-        self.baudrate = baudrate
-        self.serial_port = None
-
-    def run(self):
-        self.serial_port = serial.Serial(self.port, self.baudrate)
-
-        while True:
-            data = self.serial_port.readline().strip().decode()
-            if "HUB" in data:
-                decoded_data = data[7:21] + data[29:]
-                self.new_data_received.emit(decoded_data)
-            else:
-                self.new_data_received.emit(data.replace("\r", ""))
-
-
-class TerminalWindow(QMainWindow):
+class TerminalView(QMainWindow):
     def __init__(self):
         super().__init__()
-
-        self.serial_port = None
 
         self.setWindowTitle("Minicom")
         self.resize(1600, 1200)
@@ -84,10 +60,3 @@ class TerminalWindow(QMainWindow):
         self.serial_port_reader.serial_port.write(command.encode() + b"\r\n")
         self.terminal_output.append(f"> {command}")
         self.input.clear()
-
-
-if __name__ == '__main__':
-    app = QApplication(sys.argv)
-    terminal_window = TerminalWindow()
-    terminal_window.show()
-    sys.exit(app.exec_())
